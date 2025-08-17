@@ -54,7 +54,8 @@ def build_pipeline(X: pd.DataFrame) -> Pipeline:
     )
 
     # Calibrate for better probability estimates
-    clf = CalibratedClassifierCV(base_estimator=base, method="isotonic", cv=3)
+    #clf = CalibratedClassifierCV(base_estimator=base, method="isotonic", cv=3)
+    clf = CalibratedClassifierCV(estimator=base, method="isotonic", cv=3)
     pipe = Pipeline([("pre", pre), ("clf", clf)])
     return pipe
 
