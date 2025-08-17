@@ -18,7 +18,7 @@ TARGET = "FTR"
 def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFrame, pd.Series]:
     df = parse_dates(df)
     df = standardize_teams(df)
-    df = df.sort_values("Date").reset_index(drop=True)
+    df = df.sort_values("Game_Date").reset_index(drop=True)
     df = add_season(df)
 
     # Build features

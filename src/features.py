@@ -9,8 +9,8 @@ def outcome_to_numeric(x: str) -> int:
 
 def _team_rolling(df: pd.DataFrame, team_col: str, value_cols: List[str], windows: List[int], prefix: str) -> pd.DataFrame:
     """Create rolling means per team using match order, shifted to avoid leakage."""
-    df = df.sort_values("Date").copy()
-    out = df[["Date", "HomeTeam", "AwayTeam"]].copy()
+    df = df.sort_values("Game_Date").copy()
+    out = df[["Game_Date", "HomeTeam", "AwayTeam"]].copy()
     team_series = df[team_col]
     for col in value_cols:
         for w in windows:
@@ -24,7 +24,7 @@ def _team_rolling(df: pd.DataFrame, team_col: str, value_cols: List[str], window
 
 def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
     """Construct leakage-safe, per-team rolling features and match context features."""
-    df = df.sort_values("Date").copy()
+    df = df.sort_values("Game_Date").copy()
     # numeric base stats (Full time + first order)
     num_cols = [c for c in ["FTHG","FTAG","HS","AS","HST","AST","HF","AF","HC","AC","HY","AY","HR","AR"] if c in df.columns]
 
@@ -57,14 +57,14 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
                 **{f"home_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in home_vals.items()}
             )
         ).reset_index(level=0, drop=True)[[
-            "Date","HomeTeam","AwayTeam"] + [f"home_{k}_roll{w}" for k in home_vals.keys()]]
+            "Game_Date","HomeTeam","AwayTeam"] + [f"home_{k}_roll{w}" for k in home_vals.keys()]]
         # Away team rolling
         a = temp.groupby("AwayTeam").apply(
             lambda g: g.assign(
                 **{f"away_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in away_vals.items()}
             )
         ).reset_index(level=0, drop=True)[[
-            "Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
+            "Game_Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
         # Merge on row index
         m = h.merge(a, left_index=True, right_index=True, suffixes=("",""))
         frames.append(m)

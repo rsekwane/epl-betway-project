@@ -4,8 +4,8 @@ import pandas as pd
 RESULT_MAP = {"H": 2, "D": 1, "A": 0}  # for convenience (ordered strength)
 
 def parse_dates(df: pd.DataFrame) -> pd.DataFrame:
-    if "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    if "Game_Date" in df.columns:
+        df["Game_Date"] = pd.to_datetime(df["Game_Date"], dayfirst=True, errors="coerce")
     if "Time" in df.columns:
         # Some datasets have "HH:MM"; keep as string, but ensure no NaT issues
         df["Time"] = df["Time"].astype(str)
@@ -27,7 +27,7 @@ def season_from_date(d: pd.Timestamp) -> str:
     return f"{start_year}/{(start_year + 1) % 100:02d}"
 
 def add_season(df: pd.DataFrame) -> pd.DataFrame:
-    df["Season"] = df["Date"].apply(season_from_date)
+    df["Season"] = df["Game_Date"].apply(season_from_date)
     return df
 
 def implied_probs_from_odds(odds: pd.DataFrame) -> pd.DataFrame:
