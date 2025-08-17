@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import numpy as np
 import yaml
-from sklearn.metrics import log_loss, accuracy_score
 from src.model import make_dataset, build_pipeline, evaluate_cv, predict_with_ev, save_pipeline
+from sklearn.preprocessing import OrdinalEncoder
 
 def main(config_path: str):
     # Load config
@@ -21,6 +21,17 @@ def main(config_path: str):
     # Load dataset
     df = pd.read_csv(data_path, sep=';', on_bad_lines='skip')
     X, y, df_proc = make_dataset(df, rolling_windows=rolling_windows, seed=seed)
+
+    # Convert datetime columns to numeric
+    datetime_cols = X.select_dtypes(include=['datetime64[ns]', 'datetime64']).columns
+    for col in datetime_cols:
+        # Option 1: convert to ordinal
+        X[col] = X[col].map(pd.Timestamp.toordinal)
+        # Option 2: alternatively, extract year/month/day
+        # X[col+'_year'] = X[col].dt.year
+        # X[col+'_month'] = X[col].dt.month
+        # X[col+'_day'] = X[col].dt.day
+        # X.drop(columns=[col], inplace=True)
 
     # Split train/test by season or fallback to last 15%
     seasons = sorted(df_proc["Season"].unique())

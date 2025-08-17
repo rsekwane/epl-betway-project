@@ -15,7 +15,11 @@ from .features import build_basic_features, encode_odds_features
 
 TARGET = "FTR"
 
-def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFrame, pd.Series]:
+def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+    # Convert datetime column explicitly
+    if "Game_Date" in df.columns:
+        df["Game_Date"] = pd.to_datetime(df["Game_Date"], errors="coerce")
+
     df = parse_dates(df)
     df = standardize_teams(df)
     df = df.sort_values("Game_Date").reset_index(drop=True)
@@ -28,11 +32,15 @@ def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFra
     # Categorical ID features
     X_cats = df[["HomeTeam","AwayTeam","Season"]].copy()
 
-    # Merge
-    X = pd.concat([X_team.reset_index(drop=True), X_odds.reset_index(drop=True), X_cats.reset_index(drop=True)], axis=1)
+    # Merge all features
+    X = pd.concat([
+        X_team.reset_index(drop=True), 
+        X_odds.reset_index(drop=True), 
+        X_cats.reset_index(drop=True)
+    ], axis=1)
 
-    # Target
-    y = df[TARGET].map({"H":0, "D":1, "A":2})  # consistent ordering for columns
+    # Target encoding
+    y = df[TARGET].map({"H":0, "D":1, "A":2})
 
     return X, y, df
 
@@ -53,8 +61,7 @@ def build_pipeline(X: pd.DataFrame) -> Pipeline:
         random_state=42
     )
 
-    # Calibrate for better probability estimates
-    #clf = CalibratedClassifierCV(base_estimator=base, method="isotonic", cv=3)
+    # Calibrated classifier for probability outputs
     clf = CalibratedClassifierCV(estimator=base, method="isotonic", cv=3)
     pipe = Pipeline([("pre", pre), ("clf", clf)])
     return pipe
@@ -84,16 +91,15 @@ def fit_full(pipe: Pipeline, X: pd.DataFrame, y: pd.Series) -> Pipeline:
 def predict_with_ev(pipe: Pipeline, X: pd.DataFrame, df_raw: pd.DataFrame) -> pd.DataFrame:
     proba = pipe.predict_proba(X)
     preds = pd.DataFrame(proba, columns=["p_H","p_D","p_A"], index=X.index)
-    # Implied from Betway if available
+
     bet_cols = ["BWH","BWD","BWA"]
-    implied = None
     if all(c in df_raw.columns for c in bet_cols):
         odds = df_raw[bet_cols].replace(0, np.nan)
         imp = 1.0 / odds
         imp = imp.div(imp.sum(axis=1), axis=0)
         implied = pd.DataFrame(imp.values, columns=["imp_H","imp_D","imp_A"], index=X.index)
         preds = pd.concat([preds, implied], axis=1)
-        # EVs
+        # Expected value and value bets
         preds["EV_H"] = preds["p_H"] * df_raw["BWH"] - 1.0
         preds["EV_D"] = preds["p_D"] * df_raw["BWD"] - 1.0
         preds["EV_A"] = preds["p_A"] * df_raw["BWA"] - 1.0
@@ -103,5 +109,4 @@ def predict_with_ev(pipe: Pipeline, X: pd.DataFrame, df_raw: pd.DataFrame) -> pd
     return preds
 
 def save_pipeline(pipe: Pipeline, path: str):
-    import joblib
     joblib.dump(pipe, path)
