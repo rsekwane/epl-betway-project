@@ -17,7 +17,6 @@ def main(config_path: str):
     test_size_seasons = cfg.get("test_size_seasons", 1)
 
     df = pd.read_csv(data_path, on_bad_lines='skip')
-    #df = pd.read_csv(data_path, on_bad_lines='skip')
     X, y, df_proc = make_dataset(df, rolling_windows=rolling_windows, seed=seed)
 
     # Split by season (hold out the most recent N seasons if possible)
