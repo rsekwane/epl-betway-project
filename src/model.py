@@ -39,25 +39,29 @@ def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFra
     return X, y, df
 
 def build_pipeline(X: pd.DataFrame) -> Pipeline:
+    # Numeric features
     num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
-    cat_cols = ["HomeTeam", "AwayTeam", "Season"]
+    if "HomeAdvantage" in num_cols:
+        num_cols.remove("HomeAdvantage")  # optionally exclude from scaling
 
-    preprocessor = ColumnTransformer([
-        ("num", StandardScaler(with_mean=False), [c for c in num_cols if c not in ["HomeAdvantage"]]),
-        ("cat", OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1), cat_cols)
-    ], remainder="passthrough")
+    # Categorical features
+    cat_cols = ["HomeTeam","AwayTeam","Season"]
 
-    base_model = HistGradientBoostingClassifier(
+    pre = ColumnTransformer([
+        ("num", StandardScaler(with_mean=False), num_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+    ], remainder="drop")  # drop any other columns
+
+    base = HistGradientBoostingClassifier(
         learning_rate=0.05,
         max_depth=None,
         max_iter=400,
         l2_regularization=0.01,
-        random_state=42,
-        categorical_features=[*range(len(cat_cols))]  # let HGB know which columns are categorical
+        random_state=42
     )
 
-    clf = CalibratedClassifierCV(estimator=base_model, method="isotonic", cv=3)
-    pipe = Pipeline([("pre", preprocessor), ("clf", clf)])
+    clf = CalibratedClassifierCV(estimator=base, method="isotonic", cv=3)
+    pipe = Pipeline([("pre", pre), ("clf", clf)])
     return pipe
 
 def evaluate_cv(pipe: Pipeline, X: pd.DataFrame, y: pd.Series, n_splits=5, random_state=42) -> Dict[str, Any]:
