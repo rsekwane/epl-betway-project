@@ -66,7 +66,8 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
         ).reset_index(level=0, drop=True)[[
             "Game_Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
         # Merge on row index
-        m = h.merge(a, left_index=True, right_index=True, suffixes=("",""))
+        #m = h.merge(a, left_index=True, right_index=True, suffixes=("",""))
+        m = h.merge(a, left_index=True, right_index=True, suffixes=("_h", "_a"))
         frames.append(m)
 
     feat = pd.concat(frames, axis=1)
