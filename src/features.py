@@ -48,18 +48,20 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
 
     frames = []
     for w in windows:
-        # Home rolling
+       # Home rolling
         h = temp.groupby("HomeTeam").apply(
             lambda g: g.assign(
                 **{f"home_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in home_vals.items()}
-            )
+            ),
+            include_group=False
         ).reset_index(level=0, drop=True)[["Game_Date","HomeTeam","AwayTeam"] + [f"home_{k}_roll{w}" for k in home_vals.keys()]]
 
         # Away rolling
         a = temp.groupby("AwayTeam").apply(
             lambda g: g.assign(
                 **{f"away_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in away_vals.items()}
-            )
+            ),
+            include_group=False
         ).reset_index(level=0, drop=True)[["Game_Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
 
         # Merge
