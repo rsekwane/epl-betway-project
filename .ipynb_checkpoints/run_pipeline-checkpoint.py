@@ -16,7 +16,7 @@ def main(config_path: str):
     rolling_windows = cfg.get("rolling_windows", [3,5,10])
     test_size_seasons = cfg.get("test_size_seasons", 1)
 
-    df = pd.read_csv(data_path, on_bad_lines='skip')
+    df = pd.read_csv(data_path)
     #df = pd.read_csv(data_path, on_bad_lines='skip')
     X, y, df_proc = make_dataset(df, rolling_windows=rolling_windows, seed=seed)
 
