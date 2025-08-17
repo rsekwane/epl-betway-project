@@ -1,0 +1,12 @@
+# Path to raw dataset
+data_path: data/epl_matches.csv
+
+# Cross-validation
+n_splits: 5
+test_size_seasons: 1  # last season as holdout; if absent, last 15% of matches
+
+# Rolling windows (matches)
+rolling_windows: [3, 5, 10]
+
+# Random seed
+seed: 42
