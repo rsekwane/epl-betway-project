@@ -77,6 +77,7 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
 def encode_odds_features(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
     added = False
+    
     for bprefix, cols in {
         "betway": ["BWH","BWD","BWA"],
         "avg": ["AvgH","AvgD","AvgA"],
@@ -89,14 +90,18 @@ def encode_odds_features(df: pd.DataFrame) -> pd.DataFrame:
             imp = imp.div(imp.sum(axis=1), axis=0)
             imp.columns = [f"{bprefix}_imp_H", f"{bprefix}_imp_D", f"{bprefix}_imp_A"]
             out = pd.concat([out, imp], axis=1)
-
-            odds.columns = [f"{bprefix}_odds_H", f"{bprefix}_odds_D", f"{bprefix}_odds_A"]
-            out = pd.concat([out, odds], axis=1)
             added = True
     
-    # If no odds found, add neutral defaults
+    # fallback if no odds were available
     if not added:
         out["imp_H"] = 1/3
         out["imp_D"] = 1/3
         out["imp_A"] = 1/3
+        out["EV_H"] = df["p_H"] / out["imp_H"]
+        out["EV_D"] = df["p_D"] / out["imp_D"]
+        out["EV_A"] = df["p_A"] / out["imp_A"]
+        out["Value_H"] = out["EV_H"] > 1
+        out["Value_D"] = out["EV_D"] > 1
+        out["Value_A"] = out["EV_A"] > 1
+    
     return out
