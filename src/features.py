@@ -76,32 +76,37 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
 
 def encode_odds_features(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame(index=df.index)
-    added = False
-    
-    for bprefix, cols in {
+
+    # if real odds exist
+    odds_cols = {
         "betway": ["BWH","BWD","BWA"],
         "avg": ["AvgH","AvgD","AvgA"],
         "b365": ["B365H","B365D","B365A"]
-    }.items():
-        cols = [c for c in cols if c in df.columns]
-        if len(cols) == 3:
+    }
+    added = False
+    for prefix, cols in odds_cols.items():
+        if all(c in df.columns for c in cols):
             odds = df[cols].replace(0, np.nan)
             imp = 1.0 / odds
             imp = imp.div(imp.sum(axis=1), axis=0)
-            imp.columns = [f"{bprefix}_imp_H", f"{bprefix}_imp_D", f"{bprefix}_imp_A"]
+            imp.columns = [f"imp_H", f"imp_D", f"imp_A"]
             out = pd.concat([out, imp], axis=1)
             added = True
     
-    # fallback if no odds were available
+    # fallback if no odds
     if not added:
         out["imp_H"] = 1/3
         out["imp_D"] = 1/3
         out["imp_A"] = 1/3
-        out["EV_H"] = df["p_H"] / out["imp_H"]
-        out["EV_D"] = df["p_D"] / out["imp_D"]
-        out["EV_A"] = df["p_A"] / out["imp_A"]
-        out["Value_H"] = out["EV_H"] > 1
-        out["Value_D"] = out["EV_D"] > 1
-        out["Value_A"] = out["EV_A"] > 1
-    
+
+    # compute expected value + value bets
+    out["EV_H"] = df["p_H"] / out["imp_H"]
+    out["EV_D"] = df["p_D"] / out["imp_D"]
+    out["EV_A"] = df["p_A"] / out["imp_A"]
+
+    out["Value_H"] = out["EV_H"] > 1
+    out["Value_D"] = out["EV_D"] > 1
+    out["Value_A"] = out["EV_A"] > 1
+
     return out
+
