@@ -77,19 +77,25 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
 def encode_odds_features(df: pd.DataFrame) -> pd.DataFrame:
     """Create implied probabilities and raw odds features for multiple bookmakers."""
     out = pd.DataFrame(index=df.index)
-    for bprefix, cols in {
+    bookmakers = {
         "betway": ["BWH","BWD","BWA"],
         "avg": ["AvgH","AvgD","AvgA"],
         "b365": ["B365H","B365D","B365A"]
-    }.items():
-        cols = [c for c in cols if c in df.columns]
-        if len(cols) == 3:
-            odds = df[cols].replace(0, np.nan)
-            imp = 1.0 / odds
-            imp = imp.div(imp.sum(axis=1), axis=0)
-            imp.columns = [f"{bprefix}_imp_H", f"{bprefix}_imp_D", f"{bprefix}_imp_A"]
-            out = pd.concat([out, imp], axis=1)
+    }
 
-            odds.columns = [f"{bprefix}_odds_H", f"{bprefix}_odds_D", f"{bprefix}_odds_A"]
-            out = pd.concat([out, odds], axis=1)
+    for bprefix, cols in bookmakers.items():
+        missing = [c for c in cols if c not in df.columns]
+        if missing:
+            print(f"⚠️ Warning: Missing odds columns for {bprefix}: {missing}")
+            continue
+
+        odds = df[cols].replace(0, np.nan)
+        imp = 1.0 / odds
+        imp = imp.div(imp.sum(axis=1), axis=0)
+        imp.columns = [f"{bprefix}_imp_H", f"{bprefix}_imp_D", f"{bprefix}_imp_A"]
+        out = pd.concat([out, imp], axis=1)
+
+        odds.columns = [f"{bprefix}_odds_H", f"{bprefix}_odds_D", f"{bprefix}_odds_A"]
+        out = pd.concat([out, odds], axis=1)
+
     return out
