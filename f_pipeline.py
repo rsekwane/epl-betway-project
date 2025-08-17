@@ -8,7 +8,7 @@ import os
 # ------------------------------
 # 1️⃣ Load future fixtures CSV
 # ------------------------------
-def load_fixtures(file_path="future_fixtures.csv"):
+def load_fixtures(file_path="data/matches.csv"):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_path} not found. Please provide your fixtures CSV.")
     
@@ -84,7 +84,7 @@ def predict_probabilities(df, model):
 # ------------------------------
 # 5️⃣ Main pipeline
 # ------------------------------
-def main(fixtures_file="future_fixtures.csv", output_file="predictions.csv"):
+def main(fixtures_file="data/matches.csv", output_file="predictions.csv"):
     df = load_fixtures(fixtures_file)
     
     # Initialize model (replace with your trained model)

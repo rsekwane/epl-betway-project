@@ -120,7 +120,7 @@ def predict_future(fixtures_file="data/matches.csv", model=None):
 # ------------------------------
 # 6️⃣ Main pipeline
 # ------------------------------
-def main(historical_file="historical_results.csv", fixtures_file="future_fixtures.csv"):
+def main(historical_file="data/matches.csv", fixtures_file="data/future_matches.csv"):
     df_hist = load_historical(historical_file)
     model = train_model(df_hist)
     predict_future(fixtures_file, model=model)
