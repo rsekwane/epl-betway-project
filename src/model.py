@@ -88,21 +88,27 @@ def fit_full(pipe: Pipeline, X: pd.DataFrame, y: pd.Series) -> Pipeline:
 
 def predict_with_ev(pipe: Pipeline, X: pd.DataFrame, df_raw: pd.DataFrame) -> pd.DataFrame:
     proba = pipe.predict_proba(X)
-    preds = pd.DataFrame(proba, columns=["p_H", "p_D", "p_A"], index=X.index)
+    preds = pd.DataFrame(proba, columns=["p_H","p_D","p_A"], index=X.index)
 
-    bet_cols = ["BWH", "BWD", "BWA"]
+    bet_cols = ["BWH","BWD","BWA"]
+    # Initialize EV/implied columns with NaN
+    preds[["imp_H","imp_D","imp_A","EV_H","EV_D","EV_A"]] = np.nan
+    preds[["Value_H","Value_D","Value_A"]] = False
+
     if all(c in df_raw.columns for c in bet_cols):
         odds = df_raw[bet_cols].replace(0, np.nan)
         imp = 1.0 / odds
         imp = imp.div(imp.sum(axis=1), axis=0)
-        implied = pd.DataFrame(imp.values, columns=["imp_H", "imp_D", "imp_A"], index=X.index)
-        preds = pd.concat([preds, implied], axis=1)
+        preds[["imp_H","imp_D","imp_A"]] = imp.values
+
         preds["EV_H"] = preds["p_H"] * df_raw["BWH"] - 1.0
         preds["EV_D"] = preds["p_D"] * df_raw["BWD"] - 1.0
         preds["EV_A"] = preds["p_A"] * df_raw["BWA"] - 1.0
+
         preds["Value_H"] = preds["EV_H"] > 0
         preds["Value_D"] = preds["EV_D"] > 0
         preds["Value_A"] = preds["EV_A"] > 0
+
     return preds
 
 def save_pipeline(pipe: Pipeline, path: str):
