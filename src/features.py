@@ -19,8 +19,7 @@ def _team_rolling(df: pd.DataFrame, team_col: str, value_cols: List[str], window
             name = f"{prefix}_{col}_roll{w}"
             out[name] = (
                 df.groupby(team_series)[col]
-                .apply(lambda s: s.shift(1).rolling(w, min_periods=1).mean())
-                .reset_index(level=0, drop=True)
+                .transform(lambda s: s.shift(1).rolling(w, min_periods=1).mean())
             )
     return out
 
@@ -48,19 +47,23 @@ def build_basic_features(df: pd.DataFrame, windows: List[int]) -> pd.DataFrame:
 
     frames = []
     for w in windows:
-       # Home rolling
-        h = temp.groupby("HomeTeam").apply(
-            lambda g: g.assign(
-                **{f"home_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in home_vals.items()}
+        # Home rolling (using transform instead of apply)
+        h = temp.copy()
+        for k, v in home_vals.items():
+            h[f"home_{k}_roll{w}"] = (
+                h.groupby("HomeTeam")[v]
+                .transform(lambda s: s.shift(1).rolling(w, min_periods=1).mean())
             )
-        ).reset_index(level=0, drop=True)[["Game_Date","HomeTeam","AwayTeam"] + [f"home_{k}_roll{w}" for k in home_vals.keys()]]
+        h = h[["Game_Date","HomeTeam","AwayTeam"] + [f"home_{k}_roll{w}" for k in home_vals.keys()]]
 
-        # Away rolling
-        a = temp.groupby("AwayTeam").apply(
-            lambda g: g.assign(
-                **{f"away_{k}_roll{w}": g[v].shift(1).rolling(w, min_periods=1).mean() for k,v in away_vals.items()}
+        # Away rolling (using transform instead of apply)
+        a = temp.copy()
+        for k, v in away_vals.items():
+            a[f"away_{k}_roll{w}"] = (
+                a.groupby("AwayTeam")[v]
+                .transform(lambda s: s.shift(1).rolling(w, min_periods=1).mean())
             )
-        ).reset_index(level=0, drop=True)[["Game_Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
+        a = a[["Game_Date","HomeTeam","AwayTeam"] + [f"away_{k}_roll{w}" for k in away_vals.keys()]]
 
         # Merge
         m = h.merge(a, left_index=True, right_index=True, suffixes=("_h", "_a"))
