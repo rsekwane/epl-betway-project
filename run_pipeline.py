@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 import yaml
 from src.model import make_dataset, build_pipeline, evaluate_cv, predict_with_ev, save_pipeline
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, accuracy_score
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import OrdinalEncoder
 
 def main(config_path: str):
