@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, Tuple
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.pipeline import Pipeline
