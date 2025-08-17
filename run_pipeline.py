@@ -10,13 +10,13 @@ def main(config_path: str):
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
-    data_path = cfg.get("data_path", "data/epl_matches.csv")
+    data_path = cfg.get("data_path", "data/matches.csv")
     n_splits = int(cfg.get("n_splits", 5))
     seed = int(cfg.get("seed", 42))
     rolling_windows = cfg.get("rolling_windows", [3,5,10])
     test_size_seasons = cfg.get("test_size_seasons", 1)
 
-    df = pd.read_csv(data_path, on_bad_lines='skip')
+    df = pd.read_csv(data_path, sep=';',on_bad_lines='skip')
     X, y, df_proc = make_dataset(df, rolling_windows=rolling_windows, seed=seed)
 
     # Split by season (hold out the most recent N seasons if possible)
@@ -60,7 +60,7 @@ def main(config_path: str):
     # Predictions + EV
     preds = predict_with_ev(pipe, Xte, df_proc.loc[test_mask])
     out = pd.concat([
-        df_te[["Date","HomeTeam","AwayTeam","FTR"]].reset_index(drop=True),
+        df_te[["Game_Date","HomeTeam","AwayTeam","FTR"]].reset_index(drop=True),
         preds.reset_index(drop=True)
     ], axis=1)
     out.to_csv("outputs/predictions.csv", index=False)
