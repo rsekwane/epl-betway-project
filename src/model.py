@@ -17,7 +17,7 @@ TARGET = "FTR"
 
 def make_dataset(df: pd.DataFrame, rolling_windows, seed=42) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     if "Game_Date" in df.columns:
-        df["Game_Date"] = pd.to_datetime(df["Game_Date"], errors="coerce")
+        df["Game_Date"] = pd.to_datetime(df["Game_Date"], format="%d/%m/%Y", errors="coerce")
 
     df = parse_dates(df)
     df = standardize_teams(df)
